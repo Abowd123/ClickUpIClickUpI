@@ -4,8 +4,6 @@
 
 import {SAFE,fatal,bootOk} from "./bootguard.js";
 import {errMsg} from "./core/escape.js";
-import {initInstall} from "./ui/install.js";
-initInstall();   /* beforeinstallprompt قد يسبق الإقلاع الكامل */
 
 import "./tools/draw.js";
 import "./tools/sketch.js";
@@ -55,6 +53,7 @@ import {wireTour,tourMaybe,tourStart} from "./ui/tour.js";
 import {initWelcome} from "./ui/welcome.js";
 import {createHelpBot} from "./ui/helpbot.js";
 import {mountHelpButton} from "./ui/helpbutton.js";
+import {initPhone} from "./ui/phone.js";   /* واجهة الهاتف — المرحلة 2 */
 /* هجرة الحفظ التلقائي الثانوي — لمرّة واحدة، ثم صمت. لا نظامَ
    ثانياً بعد اليوم؛ الأساسي في state.js + io/store.js يكفي. */
 import {migrateAutosave} from "./core/migrate-autosave.js";
@@ -105,6 +104,27 @@ import {initHistoryPanel,refreshHistoryPanel} from "./ui/historypanel.js";
 import {help} from "./ui/helppan.js";
 import {initSugg} from "./ui/sugg.js";
 import {initKeymap,rbToggle} from "./ui/keymap.js";
+
+/* ═══ هل نعمل داخل غلاف Capacitor الأصلي (APK)؟ ═══ المرحلة 1 */
+export function isNativeApp(){
+ try{
+  const C=typeof window!=="undefined"&&window.Capacitor;
+  return !!(C&&typeof C.isNativePlatform==="function"&&C.isNativePlatform());
+ }catch(e){return false}
+}
+/* داخل التطبيق: لا تكبيرَ للصفحة كلّها (التكبيرُ للمخطّط بالقرص داخل لوحة
+   الرسم)، والعرضُ يمتدّ تحت النتوء. فئةُ is-native على <html> متاحةٌ لـCSS.
+   على الويب يبقى تكبيرُ الصفحة مسموحاً (إتاحة). */
+(function applyNativeShell(){
+ if(!isNativeApp())return;
+ try{
+  document.documentElement.classList.add("is-native");
+  const m=document.querySelector('meta[name="viewport"]');
+  if(m)m.setAttribute("content",
+   "width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover");
+ }catch(e){}
+})();
+
 const $=s=>document.querySelector(s);
 const $$=s=>[...document.querySelectorAll(s)];
 /* ═══ سطر الإدخال ═══ مُعرَّفة هنا (قبل build) كي تكون جاهزةً حين
@@ -124,10 +144,6 @@ function build(){
  /* P2-009: تفضيلاتٌ من بناءٍ أحدث؟ تُقرأ بحذرٍ ولا تُمحى، ويُقال */
  const prefv=stampPrefSchema();
  const uiLoaded=loadUI(SAFE);
- /* وضع اللابتوب: ماوس + شاشة واسعة = فراغ أقل للشريط ومساحة رسم أكبر.
-    لا يغيّر تفضيل المستخدم، ولا يُفعّل على اللمس أو الشاشات الصغيرة. */
- const laptop=typeof matchMedia==="function"&&matchMedia("(pointer:fine) and (min-width:1100px)").matches;
- document.documentElement.toggleAttribute("data-laptop",laptop);
  loadCode();
  snapsLoad();
  mountIcons();
@@ -303,6 +319,8 @@ function build(){
     فلا حاجة لتخمين اسم دالّة الدخول. */
  const helpBot=createHelpBot({activate:toolId=>R.begin(toolId)});
  mountHelpButton({onClick:()=>helpBot.toggle()});
+ /* واجهة الهاتف (المرحلة 2): فئةُ is-phone، السجلُّ المطويّ، وضعُ المبتدئ أوّلَ مرّة */
+ try{initPhone({safe:SAFE,setBeginner})}catch(e){}
 
  initHistoryPanel();
  installBlockDefaults();
@@ -328,7 +346,16 @@ function build(){
  }
  /* PWA (41): وضع الإنقاذ لا يسجّل عاملاً — الإنقاذ يعني «بلا كاش ولا
     حالةٍ محفوظة». العطب هنا لا يمسّ الإقلاع. */
- if(!SAFE&&typeof navigator!=="undefined"&&"serviceWorker" in navigator){
+ /* ═══ تطبيق أندرويد (Capacitor) ═══ المرحلة 1
+     الملفاتُ كلُّها داخل الـAPK فلا حاجةَ لعامل خدمة، وتسجيلُه يفشل في
+     WebView فيظهر خطأٌ أحمر. نتخطّاه ونُلغي أيَّ عاملٍ قديمٍ مسجَّل. */
+  const NATIVE=isNativeApp();
+  if(NATIVE&&typeof navigator!=="undefined"&&navigator.serviceWorker
+    &&navigator.serviceWorker.getRegistrations){
+   navigator.serviceWorker.getRegistrations()
+    .then(rs=>rs.forEach(r=>r.unregister())).catch(()=>{});
+  }
+  if(!SAFE&&typeof navigator!=="undefined"&&"serviceWorker" in navigator&&!NATIVE){
   /* ═══ الترقيةُ تصل المستخدم ═══ P6-002
      لا skipWaiting أعمى: العاملُ الجديد ينتظر، ونسأل المستخدمَ مرّةً
      ثم نُفعّله ونُعيد التحميلَ مرّةً واحدة (حارسُ reloaded يمنع حلقةً).
@@ -369,11 +396,7 @@ function build(){
  /* P6-010: الإصدارُ يظهر في الواجهة — علامةٌ واحدةٌ تشخّص rollback */
  try{
   const vb=document.getElementById("stVer");
-  if(vb){
-   vb.textContent=VERSION_LABEL; vb.title=`إصدار ${VERSION} — انقر للتفاصيل والتواصل`;
-   /* نقرةٌ على الشارة تفتح نافذة «عن» (ui/about.js) */
-   import("./ui/about.js").then(M=>M.wireVersionBadge(vb)).catch(()=>{});
-  }
+  if(vb){vb.textContent=VERSION_LABEL; vb.title=`إصدار ${VERSION}`}
   document.documentElement.dataset.ver=VERSION;
  }catch(e){}
  autoFit();
@@ -634,7 +657,6 @@ addEventListener("beforeunload",()=>{saveNow(); bkFlush()});
    useTemplate,
    openTour:()=>tourStart(),
    openStudio:()=>openStudio(),
-   openLearn:()=>runSpec({act:"learn"}),
    search:q=>paletteQuery(q,6),
    exec:it=>paletteExec(it),
    setBeginner
