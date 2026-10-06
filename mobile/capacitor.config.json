@@ -1,0 +1,9 @@
+{
+  "appId": "com.civildraft.app",
+  "appName": "CivilDraft",
+  "webDir": "www",
+  "backgroundColor": "#ffffff",
+  "android": {
+    "allowMixedContent": false
+  }
+}
