@@ -39,7 +39,7 @@ group("41 · index.html والـCSP",()=>{
 });
 group("41 · app.js: تسجيلٌ محروس",()=>{
  const a=rd("js/app.js");
- ok(/if\(!SAFE&&typeof navigator!=="undefined"&&"serviceWorker" in navigator\)/.test(a),
+ ok(/if\(!SAFE&&typeof navigator!=="undefined"&&"serviceWorker" in navigator(&&!NATIVE)?\)/.test(a),
   "محروس بـSAFE وبوجود navigator");
  ok(a.indexOf('register("./sw.js"')<a.indexOf("autoFit();\n}\nfunction useTemplate"),
   "قبل autoFit() آخر build()");
