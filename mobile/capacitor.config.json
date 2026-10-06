@@ -2,8 +2,9 @@
   "appId": "com.civildraft.app",
   "appName": "CivilDraft",
   "webDir": "www",
-  "backgroundColor": "#ffffff",
+  "backgroundColor": "#0f172a",
   "android": {
-    "allowMixedContent": false
+    "allowMixedContent": false,
+    "backgroundColor": "#0f172a"
   }
 }
