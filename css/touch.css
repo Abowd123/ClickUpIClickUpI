@@ -311,3 +311,58 @@ html.dsk-on-phone .flt{inset-inline-start:8px !important;
   #fabDock[hidden]{display:flex !important}
   #fabDock{inset-inline-end:auto; inset-inline-start:12px}
 }
+
+
+/* ─── 10. واجهةُ الهاتف — المرحلة 2 (فئة is-phone من js/ui/phone.js) ───
+   تُفعَّل على ≤768px، أو داخل تطبيق أندرويد إذا كان أقصرُ بُعدَي الشاشة
+   ≤600px (فيشمل الهاتفَ الأفقيّ). كلُّها مشروطةٌ بالفئة فلا تمسّ الحاسوب. */
+html.is-phone #top{
+  padding-top:env(safe-area-inset-top);
+  padding-inline:max(8px,env(safe-area-inset-left)) max(8px,env(safe-area-inset-right));
+}
+html.is-phone #ribbon,
+html.is-phone #side,
+html.is-phone #sideE{padding-bottom:env(safe-area-inset-bottom)}
+
+/* شريطُ الخيارات (الأصفر أعلى الرسم): سطرٌ واحدٌ رفيعٌ يُمرَّر أفقياً */
+html.is-phone #optbar{
+  inset-block-start:4px; inset-inline:4px; max-inline-size:none;
+  flex-wrap:nowrap; overflow-x:auto; overflow-y:hidden; scrollbar-width:none;
+  gap:6px; padding:3px 6px; font-size:12px; min-height:0;
+}
+html.is-phone #optbar::-webkit-scrollbar{display:none}
+html.is-phone #optbar>*{flex:none}
+
+/* سطرُ الأوامر: الموجِّه يتقلّص والحقلُ يأخذ الباقي (كان «أداة: اكتب مة» مقصوصاً) */
+html.is-phone #cmdline{gap:6px; padding:6px 8px}
+html.is-phone #clPrompt{min-width:0; max-inline-size:40%; overflow:hidden;
+  text-overflow:ellipsis; font-size:12px}
+html.is-phone #clIn{flex:1 1 auto; min-width:0; font-size:16px}
+html.is-phone #clLive{display:none}
+
+/* السجلّ: آخرُ رسالةٍ فقط، ولمسةٌ تفتحه كاملاً (phone.js) */
+html.is-phone #log{height:auto; min-height:0; max-height:2em; overflow:hidden; cursor:pointer}
+html.is-phone #log .ln{display:none}
+html.is-phone #log .ln:last-child{display:block; white-space:nowrap;
+  overflow:hidden; text-overflow:ellipsis}
+html.is-phone #log.cd-open{max-height:32vh; overflow-y:auto}
+html.is-phone #log.cd-open .ln{display:block; white-space:pre-wrap}
+
+/* شاشةُ الترحيب: جدولُ العنوان (المشروع/الحالة/الجهة) كان يغطّي البطاقة */
+html.is-phone #welcome .wc-tb{display:none}
+html.is-phone #welcome .wc-body{inset:5% 5% 5% 5%}
+
+/* عناصرُ ثانويةٌ تأخذ مساحةَ الرسم */
+html.is-phone #compass,
+html.is-phone #vpLabel{display:none}
+
+/* الخصائصُ السريعة: ورقةٌ سفليةٌ لا بطاقةٌ عائمةٌ فوق الرسم */
+html.is-phone #qpCard{
+  position:fixed; inset-inline:0 !important; inset-block-start:auto !important;
+  bottom:var(--rbH,64px) !important; width:auto; max-height:40vh; overflow-y:auto;
+  border-radius:var(--r3) var(--r3) 0 0; z-index:var(--z-side);
+  padding-bottom:env(safe-area-inset-bottom);
+}
+
+/* زرُّ المساعد أصغر ولا يلاصق الحافّة */
+html.is-phone body .hb-fab{width:44px; height:44px; inset-inline-end:12px}
