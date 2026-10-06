@@ -3,6 +3,14 @@ name: Build Android APK
 # يُشغَّل يدوياً: تبويب Actions ← Build Android APK ← Run workflow
 on:
   workflow_dispatch:
+    inputs:
+      tag:
+        description: "رقم الإصدار (مثال v1.1.0)"
+        required: true
+        default: "v1.1.0"
+
+permissions:
+  contents: write
 
 jobs:
   apk:
@@ -45,9 +53,13 @@ jobs:
           chmod +x gradlew
           ./gradlew assembleDebug --no-daemon
 
-      - name: Upload APK
-        uses: actions/upload-artifact@v4
+      - name: Rename APK
+        run: cp mobile/android/app/build/outputs/apk/debug/app-debug.apk CivilDraft.apk
+
+      - name: Publish public release
+        uses: softprops/action-gh-release@v2
         with:
-          name: CivilDraft-apk
-          path: mobile/android/app/build/outputs/apk/debug/app-debug.apk
-          if-no-files-found: error
+          tag_name: ${{ github.event.inputs.tag }}
+          name: CivilDraft ${{ github.event.inputs.tag }}
+          body: "نزّل CivilDraft.apk وثبّته على أندرويد. يعمل بلا إنترنت."
+          files: CivilDraft.apk
